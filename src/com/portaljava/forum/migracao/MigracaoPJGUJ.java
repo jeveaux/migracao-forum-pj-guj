@@ -1,7 +1,6 @@
 package com.portaljava.forum.migracao;
 
 import java.io.IOException;
-import java.util.StringTokenizer;
 import java.util.regex.Pattern;
 
 import javax.servlet.Filter;
@@ -18,7 +17,9 @@ import javax.servlet.http.HttpServletResponse;
  */
 public class MigracaoPJGUJ implements Filter {
 
-    /**
+    private static final long POST_ID_DIFF = 0;
+
+	/**
      * Default constructor. 
      */
     public MigracaoPJGUJ() {
@@ -41,33 +42,39 @@ public class MigracaoPJGUJ implements Filter {
 		
 		String uri = httpServletRequest.getRequestURI();
 		String context = httpServletRequest.getContextPath();
-		StringTokenizer tokenizer = new StringTokenizer(uri, "/");
-		
-		// Redirecionar links da home do fórum
-		if(uri == null || uri.isEmpty() || uri.equalsIgnoreCase(context) || 
-				uri.equalsIgnoreCase(context + "/") || uri.equalsIgnoreCase(context + "/forum") ||
-				uri.equalsIgnoreCase(context + "/forum/forums/list.page")) {
-			
-			httpServletResponse.setStatus(301);
-			httpServletResponse.sendRedirect("http://www.guj.com.br/forums/list.java");
-			return;
-			
-		}
-		
-		// Redirecionar links dos fórums
-		
-		String topicUrlPattern = "";
-		boolean isTopicUrl = Pattern.matches(topicUrlPattern, uri);
-		
-		
-		while(tokenizer.hasMoreTokens()) {
-			System.out.println(tokenizer.nextToken());
-		}
-		
-		System.out.println(uri);
 
+		// HTTP Status Code 301: Moved Permanently
+		httpServletResponse.setStatus(301);
 		
+		/* Redirecionar links dos posts do fórum do PJ para o fórum do GUJ
+		 * URI exemplo: forum/posts/list/1668.page
+		 * Do PJ: http://www.portaljava.com/forum/posts/list/1668.page
+		 * Para o GUJ: http://www.guj.com.br/posts/list/[1668 + POST_ID_DIFF].java
+		 */
+		String postUrlPattern = context + "/posts/list/.*.page";
+		boolean isPostUrl = Pattern.matches(postUrlPattern, uri);
+		if(isPostUrl) {
+			long postIdPj = Long.parseLong(uri.split("/")[4].toString().replaceAll(".page", ""));
+			long postIdGuj = POST_ID_DIFF + postIdPj;
+			
+			String postUrlGuj = "http://www.guj.com.br/posts/list/" + postIdGuj + ".java";
+			
+			httpServletResponse.sendRedirect(postUrlGuj);
+			return;
+		}
 		
+		/* Redirecionar links dos fóruns
+		 * Exemplo: forum/forums/show/12.page
+		 */
+		String forumUrlPattern = context + "/forums/show/.*.page";
+		boolean isForumUrl = Pattern.matches(forumUrlPattern, uri);
+		if(isForumUrl) {
+			// TODO Não sei como vai ficar o mapeamento dos IDs dos fóruns ainda
+		}
+
+		// Se não achar nenhum pattern vai para a home do fórum
+		httpServletResponse.sendRedirect("http://www.guj.com.br/forums/list.java");
+		return;
 		
 	}
 
