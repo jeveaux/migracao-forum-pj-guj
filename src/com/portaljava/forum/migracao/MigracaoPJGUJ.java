@@ -1,6 +1,8 @@
 package com.portaljava.forum.migracao;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import javax.servlet.Filter;
@@ -26,6 +28,13 @@ public class MigracaoPJGUJ implements Filter {
 
     }
 
+	/**
+	 * @see Filter#init(FilterConfig)
+	 */
+	public void init(FilterConfig fConfig) throws ServletException {
+
+	}
+    
 	/**
 	 * @see Filter#destroy()
 	 */
@@ -63,13 +72,21 @@ public class MigracaoPJGUJ implements Filter {
 			return;
 		}
 		
-		/* Redirecionar links dos fóruns
+		/* Redirecionar links dos fóruns do PJ para os fóruns do GUJ
 		 * Exemplo: forum/forums/show/12.page
 		 */
 		String forumUrlPattern = context + "/forums/show/.*.page";
 		boolean isForumUrl = Pattern.matches(forumUrlPattern, uri);
 		if(isForumUrl) {
-			// TODO Não sei como vai ficar o mapeamento dos IDs dos fóruns ainda
+			Integer forumIdPj = Integer.parseInt(uri.split("/")[4].toString().replaceAll(".page", ""));
+			Integer forumIdGuj = this.getForumDeParaMap().get(forumIdPj);
+			
+			if(forumIdGuj != null) {
+				String forumUrlGuj = "http://www.guj.com.br/forums/show/" + forumIdGuj + ".java";
+				httpServletResponse.sendRedirect(forumUrlGuj);
+				return;
+			}
+			
 		}
 
 		// Se não achar nenhum pattern vai para a home do fórum
@@ -78,11 +95,37 @@ public class MigracaoPJGUJ implements Filter {
 		
 	}
 
-	/**
-	 * @see Filter#init(FilterConfig)
+	/*
+	 * IDs: pj => guj 
+	 * 1 => 5 (Java Avançado)
+	 * 2 => 2 (Participe => Off-topic)
+	 * 6 => 22 (Persistência & DB)
+	 * 8 => 13 (Interface Gráfica)
+	 * 12 => 14 (Dispositivos móveis => Java ME)
+	 * 13 => 16 (Moderadores => Colaboradores)
+	 * 15 => 2 (Off-topic)
+	 * 22 => 11 (Certificação)
+	 * 26 => 4 (Java básico)
+	 * 34 => 6 (Web)
+	 * 35 => 18 (Ferramentas)
+	 * 36 => 19 (Patterns / frameworks)
 	 */
-	public void init(FilterConfig fConfig) throws ServletException {
-
+	private Map<Integer, Integer> getForumDeParaMap() {
+		Map<Integer, Integer> map = new HashMap<Integer, Integer>();
+		map.put(1, 5);
+		map.put(2, 2);
+		map.put(6, 22);
+		map.put(8, 13);
+		map.put(12, 14);
+		map.put(13, 16);
+		map.put(15, 2);
+		map.put(22, 11);
+		map.put(26, 4);
+		map.put(34, 6);
+		map.put(35, 18);
+		map.put(36, 19);
+		
+		return map;
 	}
-
+	
 }
